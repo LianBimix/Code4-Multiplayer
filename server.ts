@@ -2,8 +2,8 @@ interface Player {
   id: string;
   x: number;
   y: number;
-  chaser: boolean;
 }
+let chaserID: string; 
 
 const players: Record<string, Player> = {};
 const sockets = new Map<string, WebSocket>();
@@ -48,7 +48,10 @@ Deno.serve((request) => {
     socket.addEventListener("open", () => {
       console.log(`Player ${id} connected`);
       socket.send(JSON.stringify({ type: "init", id, players }));
-      broadcast({ type: "join", player: players[id] }, id);
+      if (!chaserID) {
+        chaserID = id; 
+      }
+      broadcast({ type: "join", player: players[id], chaserID: chaserID }, id);
     });
 
     socket.addEventListener("message", (event) => {
@@ -60,7 +63,16 @@ Deno.serve((request) => {
         if (msg.dir === "down") p.y += 10;
         if (msg.dir === "left") p.x -= 10;
         if (msg.dir === "right") p.x += 10;
-        broadcast({ type: "update", player: p });
+        broadcast({ type: "update", player: p, chaserID: chaserID });
+        if (id === chaserID) {
+          for (let otherPlayerID in players) {
+            if (otherPlayerID != id) {
+              if (p.x == players[otherPlayerID].x && p.y == players[otherPlayerID].y) {
+                chaserID = otherPlayerID;
+              }
+            }
+          }
+        }
       }
     });
 
@@ -68,7 +80,7 @@ Deno.serve((request) => {
       console.log(`Player ${id} disconnected`);
       delete players[id];
       sockets.delete(id);
-      broadcast({ type: "leave", id });
+      broadcast({ type: "leave", id, chaserID: chaserID });
     });
 
     return response;

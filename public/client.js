@@ -4,20 +4,25 @@ const protocol = location.protocol === "https:" ? "wss:" : "ws:";
 const socket = new WebSocket(`${protocol}//${location.host}/ws`);
 let myId = null;
 let players = {};
+let chaserID;
 socket.addEventListener("message", (event) => {
     const msg = JSON.parse(event.data);
     if (msg.type === "init") {
         myId = msg.id;
         players = msg.players;
+        chaserID = msg.chaserID;
     }
     else if (msg.type === "join") {
         players[msg.player.id] = msg.player;
+        chaserID = msg.chaserID;
     }
     else if (msg.type === "update") {
         players[msg.player.id] = msg.player;
+        chaserID = msg.chaserID;
     }
     else if (msg.type === "leave") {
         delete players[msg.id];
+        chaserID = msg.chaserID;
     }
 });
 document.addEventListener("keydown", (e) => {
@@ -49,7 +54,7 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const id in players) {
         const p = players[id];
-        ctx.fillStyle = id === myId ? "blue" : "red";
+        ctx.fillStyle = id === chaserID ? "blue" : "red";
         ctx.fillRect(p.x, p.y, 20, 20);
     }
     requestAnimationFrame(gameLoop);
