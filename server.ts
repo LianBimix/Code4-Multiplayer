@@ -16,7 +16,7 @@ function broadcast(message: unknown, except?: string) {
   }
 }
 
-Deno.serve((request) => {
+Deno.serve((request: any) => {
   const { pathname } = new URL(request.url);
 
   // Static file serving
@@ -54,7 +54,7 @@ Deno.serve((request) => {
       broadcast({ type: "join", player: players[id], chaserID: chaserID }, id);
     });
 
-    socket.addEventListener("message", (event) => {
+    socket.addEventListener("message", (event: any) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "move") {
         const p = players[id];
